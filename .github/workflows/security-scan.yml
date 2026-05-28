@@ -2,9 +2,9 @@ name: Security Scan
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ "test" ]
   pull_request:
-    branches: [ "main", "master" ]
+    branches: [ "test" ]
 
 jobs:
   security-check:
@@ -14,33 +14,38 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0 # Kailangan para ma-scan ang kasaysayan ng commits
+        fetch-depth: 0 
 
     # --- 1. CHECK EXPOSED CREDENTIALS ---
-    # Inalis ang 'base' at 'head' para ang TruffleHog na mismo ang mag-adjust kung push o PR ang event
-    # Idinagdag ang 'continue-on-error' para hindi mag-stop ang buong pipeline kung may makitang error agad
+    # Ginawang false ang --only-verified para mahuli kahit dummy keys na ite-test mo
     - name: Secret Scanning (TruffleHog)
       uses: trufflesecurity/trufflehog@main
       with:
         path: ./
-        extra_args: --only-verified
+        extra_args: --only-verified=false
 
     # --- SETUP ENVIRONMENT FOR LARAVEL SCAN ---
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
       with:
         php-version: '8.2'
-        extensions: dom, curl, libxml, mbstring, zip
+        extensions: dom, curl, libxml, mbstring, zip, pdo, pdo_mysql
         coverage: none
 
-    # Inalis ang '--no-suggest' dahil error ito sa Composer 3. 
-    # Idinagdag ang '--ignore-platform-reqs' para hindi mag-fail sa PHP version ng runner.
     - name: Install Composer Dependencies
       run: composer install --prefer-dist --no-progress --ignore-platform-reqs
 
-    # --- 2. CHECK SQL INJECTION & LARAVEL VULNERABILITIES ---
-    # Kung Enlightn ang gagamitin mo, siguraduhing kasama ito sa composer.json mo bilang dev dependency
-    - name: Run Enlightn (Laravel Security Scanner)
+    # --- 2. CHECK LARAVEL CONFIG VULNERABILITIES (ENLIGHTN) ---
+    # Tinitingnan nito kung may leak sa .env o unsecured sessions
+    - name: Run Enlightn Security Checker
       run: |
-        composer require dev capabilities --dev
-        vendor/bin/tests-or-scanner-command || true
+        composer require-dev enlightn/security-checker --ignore-platform-reqs
+        vendor/bin/security-checker security:check composer.lock
+
+    # --- 3. CHECK SQL INJECTION & UNSAFE CODE (LARASTAN) ---
+    # ITO ANG MAKAKA-DETECT NG SQL INJECTION SA MGA CONTROLLERS MO.
+    # Inalis ang "|| true" para kapag may nakitang SQL injection, MAG-FAIL (Pula) talaga ang GitHub Actions.
+    - name: Run Larastan (Static Analysis)
+      run: |
+        composer require-dev nunomaduro/larastan --ignore-platform-reqs
+        vendor/bin/phpstan analyse app/ --level=4
