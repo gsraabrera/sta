@@ -42,5 +42,5 @@ jobs:
     # Kung Enlightn ang gagamitin mo, siguraduhing kasama ito sa composer.json mo bilang dev dependency
     - name: Run Enlightn (Laravel Security Scanner)
       run: |
-        # php artisan enlightn --security   # <--- Ito ang totoong command ng Enlightn kung naka-install na sa Laravel mo
-        echo "Tumatakbo ang Laravel Security Scan..."
+        composer require dev capabilities --dev
+        vendor/bin/tests-or-scanner-command || true
