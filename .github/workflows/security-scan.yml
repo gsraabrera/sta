@@ -42,10 +42,16 @@ jobs:
     - name: Run Composer Audit (Security Checker)
       run: composer audit
 
-    # --- 3. CHECK SQL INJECTION & UNSAFE CODE (LARASTAN) ---
-    # Idinagdag natin ang "-W" flag para kung sakaling may bersyon na medyo mahigpit ang Larastan,
-    # kusa itong aayusin ng Composer nang hindi nag-e-error ang build mo.
-    - name: Run Larastan (Static Analysis)
+# Itinaas natin ang level sa 9 (Pinakamataas at Pinakamahigpit) 
+    # para masuri ang bawat string concatenation sa loob ng DB queries.
+    - name: Run Larastan (Strict Security Analysis)
       run: |
         composer require nunomaduro/larastan --dev --ignore-platform-reqs -W
-        vendor/bin/phpstan analyse app/ --level=4
+        
+        # Gagawa tayo ng pansamantalang phpstan.neon file para pilitin ang strict checks
+        echo "parameters:" > phpstan.neon
+        echo "  level: 9" >> phpstan.neon
+        echo "  paths:" >> phpstan.neon
+        echo "    - app" >> phpstan.neon
+        
+        vendor/bin/phpstan analyse
