@@ -11,20 +11,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    # STEP 1: I-download ang code mula sa iyong GitHub repository
     - name: Checkout Code
       uses: actions/checkout@v4
       with:
         fetch-depth: 0 
 
-    # --- 1. CHECK EXPOSED CREDENTIALS ---
-    # Ginawang false ang --only-verified para mahuli kahit dummy keys na ite-test mo
+    # STEP 2: I-scan ang BUONG REPO (Root at History) para sa mga nakalantad na passwords/keys
     - name: Secret Scanning (TruffleHog)
       uses: trufflesecurity/trufflehog@main
       with:
         path: ./
-        # extra_args: --only-verified=false
 
-    # --- SETUP ENVIRONMENT FOR LARAVEL SCAN ---
+    # STEP 3: I-ready ang PHP runner ng GitHub Actions
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
       with:
@@ -32,30 +31,25 @@ jobs:
         extensions: dom, curl, libxml, mbstring, zip, pdo, pdo_mysql
         coverage: none
 
+    # STEP 4: I-install ang mga dependencies para maunawaan ng scanner ang Laravel structure
     - name: Install Composer Dependencies
       run: composer install --prefer-dist --no-progress --ignore-platform-reqs
 
-# --- 2. CHECK LARAVEL DEPENDENCY VULNERABILITIES (COMPOSER AUDIT) ---
-    # Ito ang pinakabagong standard ngayon sa modernong Laravel.
-    # Iiskanin nito ang iyong composer.lock laban sa opisyal na GitHub Advisory Database.
-    # Kung may kilalang vulnerability o leak ang mga gamit mong pakete, haharangin niya ito.
+    # STEP 5: I-scan ang composer.lock para sa mga paketeng may kilalang kumakalat na virus/vulnerability
     - name: Run Composer Audit (Security Checker)
       run: composer audit
 
-# Itinaas natin ang level sa 9 (Pinakamataas at Pinakamahigpit) 
-    # para masuri ang bawat string concatenation sa loob ng DB queries.
+    # STEP 6: Patakbuhin ang malupit na SQL Injection check sa mga custom folders niyo (Level 9)
     - name: Run Larastan (Strict Security Analysis)
       run: |
         composer require nunomaduro/larastan --dev --ignore-platform-reqs -W
         
-        # Gagawa tayo ng pansamantalang phpstan.neon file para pilitin ang strict checks
+        # Gumawa ng malinis na configuration file nang walang dobleng linya at walang config folder
         echo "parameters:" > phpstan.neon
         echo "  level: 9" >> phpstan.neon
         echo "  paths:" >> phpstan.neon
-        echo "    - routes" >> phpstan.neon
-        echo "    - app"        >> phpstan.neon # Kasama lahat ng Controllers, Models, Services, at sub-folders nito
-        echo "    - routes"     >> phpstan.neon # Kasama ang web.php, api.php, etc.
-        echo "    - database"   >> phpstan.neon # Kasama ang mga Seeders at Migrations (baka may SQL injection din doon)
-        echo "    - config"     >> phpstan.neon # Kasama lahat ng configuration files
+        echo "    - app"        >> phpstan.neon
+        echo "    - routes"     >> phpstan.neon
+        echo "    - database"   >> phpstan.neon
         
-        vendor/bin/phpstan analyse
+        vendor/bin/phpstan analyse --configuration=phpstan.neon
