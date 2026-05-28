@@ -1,1 +1,1 @@
-$aws_secret = "AKIAIOSFODNN7EXAMPLE";
+$aws_secret = "AKIAIOSFODNN7EXAMPLE1";
