@@ -5,7 +5,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome1');
+    return view('welcome12');
 });
 
 Route::get('/unsafe-user', function (Request $request) {
