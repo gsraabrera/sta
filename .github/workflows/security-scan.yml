@@ -35,17 +35,16 @@ jobs:
     - name: Install Composer Dependencies
       run: composer install --prefer-dist --no-progress --ignore-platform-reqs
 
-    # --- 2. CHECK LARAVEL CONFIG VULNERABILITIES (ENLIGHTN) ---
-    # Tinitingnan nito kung may leak sa .env o unsecured sessions
+# --- 2. CHECK LARAVEL CONFIG VULNERABILITIES (ENLIGHTN) ---
     - name: Run Enlightn Security Checker
       run: |
-        composer require-dev enlightn/security-checker --ignore-platform-reqs
+        # Inayos mula sa 'require-dev' tungo sa 'require --dev'
+        composer require enlightn/security-checker --dev --ignore-platform-reqs
         vendor/bin/security-checker security:check composer.lock
 
     # --- 3. CHECK SQL INJECTION & UNSAFE CODE (LARASTAN) ---
-    # ITO ANG MAKAKA-DETECT NG SQL INJECTION SA MGA CONTROLLERS MO.
-    # Inalis ang "|| true" para kapag may nakitang SQL injection, MAG-FAIL (Pula) talaga ang GitHub Actions.
     - name: Run Larastan (Static Analysis)
       run: |
-        composer require-dev nunomaduro/larastan --ignore-platform-reqs
+        # Inayos din dito para tama ang syntax ng Composer
+        composer require nunomaduro/larastan --dev --ignore-platform-reqs
         vendor/bin/phpstan analyse app/ --level=4
