@@ -52,6 +52,10 @@ jobs:
         echo "parameters:" > phpstan.neon
         echo "  level: 9" >> phpstan.neon
         echo "  paths:" >> phpstan.neon
-        echo "    - app" >> phpstan.neon
+        echo "    - routes" >> phpstan.neon
+        echo "    - app"        >> phpstan.neon # Kasama lahat ng Controllers, Models, Services, at sub-folders nito
+        echo "    - routes"     >> phpstan.neon # Kasama ang web.php, api.php, etc.
+        echo "    - database"   >> phpstan.neon # Kasama ang mga Seeders at Migrations (baka may SQL injection din doon)
+        echo "    - config"     >> phpstan.neon # Kasama lahat ng configuration files
         
         vendor/bin/phpstan analyse
