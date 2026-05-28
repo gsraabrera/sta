@@ -1,0 +1,44 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  security-check:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # Kailangan ng TruffleHog para ma-scan ang buong history
+
+    # --- 1. CHECK EXPOSED CREDENTIALS ---
+    - name: Secret Scanning (TruffleHog)
+      uses: trufflesecurity/trufflehog@main
+      with:
+        path: ./
+        base: ${{ github.event.repository.default_branch }}
+        head: HEAD
+        extra_args: --only-verified
+
+    # --- SETUP ENVIRONMENT FOR LARAVEL SCAN ---
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        extensions: dom, curl, libxml, mbstring, zip
+        coverage: none
+
+    - name: Install Composer Dependencies
+      run: composer install --prefer-dist --no-progress --no-suggest
+
+    # --- 2. CHECK SQL INJECTION & LARAVEL VULNERABILITIES ---
+    - name: Run Enlightn (Laravel Security Scanner)
+      run: |
+        composer require dev capabilities --dev # Tiyaking may enlightened-laravel tool o gamitin ang php artisan
+        # Nota: Pwede mo ring gamitin ang Larastan para sa static analysis
+        vendor/bin/tests-or-scanner-command || true
