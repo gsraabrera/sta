@@ -35,16 +35,17 @@ jobs:
     - name: Install Composer Dependencies
       run: composer install --prefer-dist --no-progress --ignore-platform-reqs
 
-# --- 2. CHECK LARAVEL CONFIG VULNERABILITIES (ENLIGHTN) ---
-    - name: Run Enlightn Security Checker
-      run: |
-        # Inayos mula sa 'require-dev' tungo sa 'require --dev'
-        composer require enlightn/security-checker --dev --ignore-platform-reqs
-        vendor/bin/security-checker security:check composer.lock
+# --- 2. CHECK LARAVEL DEPENDENCY VULNERABILITIES (COMPOSER AUDIT) ---
+    # Ito ang pinakabagong standard ngayon sa modernong Laravel.
+    # Iiskanin nito ang iyong composer.lock laban sa opisyal na GitHub Advisory Database.
+    # Kung may kilalang vulnerability o leak ang mga gamit mong pakete, haharangin niya ito.
+    - name: Run Composer Audit (Security Checker)
+      run: composer audit
 
     # --- 3. CHECK SQL INJECTION & UNSAFE CODE (LARASTAN) ---
+    # Idinagdag natin ang "-W" flag para kung sakaling may bersyon na medyo mahigpit ang Larastan,
+    # kusa itong aayusin ng Composer nang hindi nag-e-error ang build mo.
     - name: Run Larastan (Static Analysis)
       run: |
-        # Inayos din dito para tama ang syntax ng Composer
-        composer require nunomaduro/larastan --dev --ignore-platform-reqs
+        composer require nunomaduro/larastan --dev --ignore-platform-reqs -W
         vendor/bin/phpstan analyse app/ --level=4
